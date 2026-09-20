@@ -43,6 +43,15 @@ CREATE TABLE IF NOT EXISTS fpl.bronze.player_gameweek_history (
 ) USING DELTA
 COMMENT 'Raw per-player element-summary history, batched per ingestion run';
 
+CREATE TABLE IF NOT EXISTS fpl.bronze.historical_season_data (
+    ingest_ts        TIMESTAMP,
+    source_file       STRING      COMMENT 'Path in the landing volume, includes season and file type',
+    season            STRING      COMMENT 'e.g. 2023-24',
+    file_type         STRING      COMMENT 'players_raw | merged_gw | fixtures',
+    payload           STRING      COMMENT 'Raw CSV content as text'
+) USING DELTA
+COMMENT 'Raw historical season data landed from the vaastav/Fantasy-Premier-League GitHub dataset. NOTE: that dataset''s xP column can leak post-match info -- exclude or shift(1) it in Silver.';
+
 CREATE TABLE IF NOT EXISTS fpl.bronze.xg_match_stats (
     ingest_ts        TIMESTAMP,
     source_file       STRING,
