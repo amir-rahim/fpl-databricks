@@ -164,35 +164,89 @@ PARTITIONED BY (fixture_id);
 
 -- =====================================================================
 -- GOLD — wide, feature-ready tables
+-- Expanded schemas for comprehensive ML feature engineering.
+-- See notebook 'FPL Gold Features' (423499055476430) for the transformation
+-- SQL that populates these tables from the silver tier.
 -- =====================================================================
 
-CREATE TABLE IF NOT EXISTS fpl.gold.player_form_features (
-    player_id             INT     NOT NULL,
-    event_id              INT     NOT NULL COMMENT 'Target gameweek being predicted',
-    rolling_3gw_points_avg DECIMAL(6,2),
-    rolling_5gw_points_avg DECIMAL(6,2),
-    rolling_3gw_xg_avg     DECIMAL(6,3),
-    rolling_3gw_xa_avg     DECIMAL(6,3),
-    minutes_last_3gw       INT,
-    price                  DECIMAL(4,1),
-    selected_by_percent    DECIMAL(5,1),
-    fixture_difficulty_next INT,
-    is_home_next            BOOLEAN,
-    days_since_last_game    INT,
-    position                 STRING
+CREATE TABLE IF NOT EXISTS fpl.gold.team_strength_rolling (
+    team_id                        INT     NOT NULL,
+    event_id                       INT     NOT NULL,
+    rolling_3gw_goals_scored       DECIMAL(6,2),
+    rolling_5gw_goals_scored       DECIMAL(6,2),
+    rolling_3gw_goals_conceded     DECIMAL(6,2),
+    rolling_5gw_goals_conceded     DECIMAL(6,2),
+    rolling_3gw_clean_sheets       DECIMAL(6,2)  COMMENT 'Fraction of last 3 games with clean sheet',
+    rolling_5gw_clean_sheets       DECIMAL(6,2),
+    rolling_3gw_points             DECIMAL(6,2)   COMMENT 'Avg team points (W=3,D=1,L=0) over last 3',
+    rolling_5gw_points             DECIMAL(6,2),
+    rolling_3gw_home_goals_scored  DECIMAL(6,2),
+    rolling_3gw_away_goals_scored  DECIMAL(6,2),
+    rolling_3gw_home_goals_conceded DECIMAL(6,2),
+    rolling_3gw_away_goals_conceded DECIMAL(6,2),
+    games_played                   INT,
+    total_goals_scored             INT,
+    total_goals_conceded           INT,
+    updated_ts                     TIMESTAMP
 ) USING DELTA
-COMMENT 'Feature table consumed directly by the prediction model'
+COMMENT 'Rolling team-level strength features from finished fixtures'
 PARTITIONED BY (event_id);
 
-CREATE TABLE IF NOT EXISTS fpl.gold.team_strength_rolling (
-    team_id                  INT   NOT NULL,
-    event_id                 INT   NOT NULL,
-    rolling_goals_scored     DECIMAL(6,2),
-    rolling_goals_conceded   DECIMAL(6,2),
-    rolling_xg_for           DECIMAL(6,3),
-    rolling_xg_against       DECIMAL(6,3)
+CREATE TABLE IF NOT EXISTS fpl.gold.player_form_features (
+    player_id                      INT     NOT NULL,
+    event_id                       INT     NOT NULL COMMENT 'Target gameweek',
+    web_name                       STRING,
+    position                       STRING,
+    team_id                        INT,
+    price                          DECIMAL(4,1),
+    rolling_3gw_points_avg         DECIMAL(6,2),
+    rolling_5gw_points_avg         DECIMAL(6,2),
+    rolling_10gw_points_avg        DECIMAL(6,2),
+    points_per_90                  DECIMAL(6,2),
+    points_stddev_5gw              DECIMAL(6,2)   COMMENT 'Consistency metric',
+    rolling_3gw_goals_avg          DECIMAL(6,2),
+    rolling_5gw_goals_avg          DECIMAL(6,2),
+    rolling_3gw_assists_avg        DECIMAL(6,2),
+    rolling_5gw_assists_avg        DECIMAL(6,2),
+    goals_assists_per_90           DECIMAL(6,2),
+    rolling_3gw_minutes_avg        DECIMAL(6,2),
+    rolling_5gw_minutes_avg        DECIMAL(6,2),
+    minutes_pct_5gw                DECIMAL(5,2)   COMMENT 'Avg pct of 90 mins over last 5 GW',
+    rolling_3gw_influence_avg      DECIMAL(6,2),
+    rolling_3gw_creativity_avg     DECIMAL(6,2),
+    rolling_3gw_threat_avg         DECIMAL(6,2),
+    rolling_3gw_ict_index_avg      DECIMAL(6,2),
+    rolling_3gw_bps_avg            DECIMAL(6,2),
+    rolling_3gw_bonus_avg          DECIMAL(6,2),
+    rolling_3gw_clean_sheets       DECIMAL(6,2),
+    rolling_3gw_goals_conceded     DECIMAL(6,2),
+    rolling_3gw_saves              DECIMAL(6,2)   COMMENT 'GKP specific',
+    rolling_5gw_yellow_cards       DECIMAL(6,2),
+    rolling_5gw_red_cards          DECIMAL(6,2),
+    season_total_points            INT,
+    season_total_minutes           INT,
+    season_total_goals             INT,
+    season_total_assists           INT,
+    season_total_bps               INT,
+    season_avg_points              DECIMAL(6,2),
+    games_played                   INT,
+    rolling_3gw_transfers_in       DECIMAL(10,1),
+    rolling_3gw_transfers_out     DECIMAL(10,1),
+    net_transfers_5gw              DECIMAL(10,1),
+    selected_by_percent            DECIMAL(5,1),
+    next_fixture_id                INT,
+    next_opponent_team_id          INT,
+    fixture_difficulty_next        INT,
+    is_home_next                   BOOLEAN,
+    next_opponent_conceding        DECIMAL(6,2)  COMMENT 'Opponent rolling goals conceded (higher = easier fixture)',
+    team_rolling_3gw_goals_scored  DECIMAL(6,2),
+    team_rolling_3gw_goals_conceded DECIMAL(6,2),
+    team_rolling_3gw_points        DECIMAL(6,2),
+    actual_points                  INT           COMMENT 'Actual FPL points scored this gameweek (ML target)',
+    days_since_last_game           INT,
+    updated_ts                     TIMESTAMP
 ) USING DELTA
-COMMENT 'Rolling team-level strength features'
+COMMENT 'Comprehensive ML-ready player features — one row per player per gameweek'
 PARTITIONED BY (event_id);
 
 CREATE TABLE IF NOT EXISTS fpl.gold.predictions (
