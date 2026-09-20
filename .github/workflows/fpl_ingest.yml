@@ -1,0 +1,27 @@
+name: FPL Data Ingestion
+
+on:
+  schedule:
+    # Every 6 hours. FPL data barely moves mid-week, so tighten this around
+    # gameweek deadlines and loosen it otherwise if you want to save minutes.
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}   # lets you trigger a run manually from the Actions tab
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run FPL ingestion
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: python scripts/fpl_ingest.py
