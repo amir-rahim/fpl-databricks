@@ -17,6 +17,7 @@ the logs, add a short sleep between requests (a commented-out line is left
 below to make that easy).
 """
 
+import io
 import json
 import os
 import sys
@@ -41,7 +42,7 @@ def fetch_json(endpoint: str) -> dict:
 
 def upload_to_volume(client: WorkspaceClient, volume_path: str, payload: dict) -> None:
     data = json.dumps(payload).encode("utf-8")
-    client.files.upload(volume_path, data, overwrite=True)
+    client.files.upload(volume_path, io.BytesIO(data), overwrite=True)
     print(f"  uploaded {len(data):,} bytes -> {volume_path}")
 
 
